@@ -1,1 +1,1 @@
-cmd_/home/dupandit/CSC501_TNPHEAP/kernel_module/tnpheap.o := ld -m elf_x86_64   -r -o /home/dupandit/CSC501_TNPHEAP/kernel_module/tnpheap.o /home/dupandit/CSC501_TNPHEAP/kernel_module/src/tnpheap_core.o 
+cmd_/home/dupandit/OS_projects/CSC501_TNPHEAP/kernel_module/tnpheap.o := ld -m elf_x86_64   -r -o /home/dupandit/OS_projects/CSC501_TNPHEAP/kernel_module/tnpheap.o /home/dupandit/OS_projects/CSC501_TNPHEAP/kernel_module/src/tnpheap_core.o 

@@ -46,26 +46,85 @@
 
 struct miscdevice tnpheap_dev;
 
+struct ver_off
+{
+    __u64 version;
+    __u64 offset;
+    struct ver_off *next;
+};
+
+struct ver_off *head = NULL;
+
+int trans_id;
+
 __u64 tnpheap_get_version(struct tnpheap_cmd __user *user_cmd)
 {
+    printk("Entering kernel get version\n");
     struct tnpheap_cmd cmd;
     if (copy_from_user(&cmd, user_cmd, sizeof(cmd)))
     {
-        return -1 ;
-    }    
-    return 0;
+        printk("Object %ld requesting version\n",cmd.offset);
+	struct ver_off *traverse = head;
+
+	// If offset is there in ver_off
+	while(traverse!=NULL)
+	{
+		if (cmd.offset == traverse->offset)
+		{
+			printk("Object %ld already there\n",cmd.offset);
+			printk("Object %ld : version %ld\n",cmd.offset,traverse->version);
+			return traverse->version;
+		}
+		else
+		{
+			traverse=traverse->next;
+		}
+	}	
+
+
+	// Else make a node and :
+		//- Make it a first object if LL is empty
+		// - Append at the end of linked list
+	printk("Object %ld not in veroff\n",cmd.offset);
+	struct ver_off *traverse2 = head;
+
+	struct ver_off *new_node =(struct ver_off*)kmalloc(sizeof(struct ver_off),GFP_KERNEL);
+	new_node->offset = cmd.offset;
+	new_node->version = 1;
+
+	// First object
+	if(traverse2==NULL)
+	{
+		traverse2 = new_node;
+	}
+ 
+	else
+	{
+		while(traverse2->next!=NULL)
+		{
+			traverse2=traverse2->next;
+		}
+	traverse2 = traverse2->next;
+	traverse2 = new_node;
+	}
+	
+	printk("Object %ld : version %ld\n",cmd.offset,traverse2->version);
+        return traverse2->version ;
+    } 
 }
 
 __u64 tnpheap_start_tx(struct tnpheap_cmd __user *user_cmd)
-{
+{   printk("Entering kernel transaction\n");
     struct tnpheap_cmd cmd;
     __u64 ret=0;
     if (copy_from_user(&cmd, user_cmd, sizeof(cmd)))
     {
-        return -1 ;
+	printk("Copy in transaction failded\n");
     }    
-    return ret;
-}
+    trans_id +=1;
+    printk("Starting Trasaction : %d\n",trans_id);
+    return trans_id ;
+    }
 
 __u64 tnpheap_commit(struct tnpheap_cmd __user *user_cmd)
 {
