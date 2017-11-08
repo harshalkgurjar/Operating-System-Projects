@@ -123,7 +123,7 @@ __u64 tnpheap_start_tx(struct tnpheap_cmd __user *user_cmd)
     __u64 ret=0;
     if (copy_from_user(&cmd, user_cmd, sizeof(cmd)))
     {
-	printk("Copy in transaction failded\n");
+	     printk("Copy in transaction failded\n");
     }
     trans_id +=1;
     printk("Starting Trasaction : %d\n",trans_id);
@@ -134,9 +134,38 @@ __u64 tnpheap_commit(struct tnpheap_cmd __user *user_cmd)
 {
     struct tnpheap_cmd cmd;
     __u64 ret=0;
+    DEFINE_MUTEX(my_mutex);
+
     if (copy_from_user(&cmd, user_cmd, sizeof(cmd)))
     {
-        return -1 ;
+        printk("Copy failed in tnpheap_commit\n");
+    }
+
+    // If size = 0, then perform lock
+    // If size = 1, then perform unlocked
+    // If size = 2, increment version number for that object
+    if(user_cmd->size == 0)
+    {
+      mutex_lock(&my_mutex);
+    }
+
+    if(user_cmd->size == 1)
+    {
+      mutex_unlock(&my_mutex);
+    }
+
+    if(user_cmd->size == 2)
+    {
+      struct ver_off *my_temp = head;
+      while (my_temp!=NULL)
+      {
+          if(my_temp->offset == user_cmd->offset)
+          {
+            printk("Incremnting version for %ld\n",my_temp->offset);
+            my_temp->version += 1;
+          }
+          my_temp = my_temp->next;
+      }
     }
     return ret;
 }

@@ -27,7 +27,7 @@ struct my_tnpheap *start = NULL;
 
 __u64 tnpheap_get_version(int npheap_dev, int tnpheap_dev, __u64 offset)
 {
-    __u64 ver; 
+    __u64 ver;
     struct tnpheap_cmd vercmd;
     vercmd.offset = offset;
     ver = ioctl(tnpheap_dev,TNPHEAP_IOCTL_GET_VERSION,&vercmd);
@@ -50,9 +50,9 @@ void *tnpheap_alloc(int npheap_dev, int tnpheap_dev, __u64 offset, __u64 size)
     {
         if (offset == temp->offset)
 	{
-            ver = tnpheap_get_version(npheap_dev,tnpheap_dev,offset); 
+            ver = tnpheap_get_version(npheap_dev,tnpheap_dev,offset);
             printf("Object %lld already there & Current version of the object is %lld\n\n",offset,ver);
-	    return temp->buffer;		
+	    return temp->buffer;
 	}
 
 	else
@@ -63,7 +63,7 @@ void *tnpheap_alloc(int npheap_dev, int tnpheap_dev, __u64 offset, __u64 size)
 
     printf("Object NOT there, Adding...........\n");
     struct my_tnpheap *temp2 = start;
-       
+
     struct my_tnpheap *new_node = (struct my_tnpheap*)malloc(sizeof(struct my_tnpheap));
     new_node->mapping = (void *)npheap_alloc(npheap_dev,offset,size);
     new_node->buffer = (void *)malloc(size);
@@ -87,7 +87,7 @@ void *tnpheap_alloc(int npheap_dev, int tnpheap_dev, __u64 offset, __u64 size)
 
         temp2->next = new_node;
     }
-    return new_node->buffer;     
+    return new_node->buffer;
 }
 
 __u64 tnpheap_start_tx(int npheap_dev, int tnpheap_dev)
@@ -97,6 +97,51 @@ __u64 tnpheap_start_tx(int npheap_dev, int tnpheap_dev)
 
 int tnpheap_commit(int npheap_dev, int tnpheap_dev)
 {
+    // Consider my_tnpheap LL, traverse it one by one to check if the version matches for each object :
+    // If NO : return 1
+    // IF YES : copy from buffer space to kernel space and return 0
+    // While copying , make sure that is atomic
+    char *buf;
+    char *map;
+    struct tnpheap_cmd *for_lock_commit;
+    for_lock_commit->size = 0;  // 0 for lock
+    ioctl(tnpheap_dev,TNPHEAP_IOCTL_COMMIT,for_lock_commit);
+
+    struct my_tnpheap *temp3 = start;
+    while(temp2!=NULL)
+    {
+      if(temp2->version != tnpheap_get_version(npheap_dev,tnpheap_dev,offset)
+      {
+        return 1;
+      }
+      else
+      {
+        temp2=temp2->next;
+      }
+    }
+
+    // Now we are confirmed that version matches for all objects
+    struct my_tnpheap *temp4 = start;
+    while(temp4!=NULL)
+    {
+        buf = temp4->buffer;
+        while(temp4->size != npheap_getsize(npheap_dev,temp4->offset))
+        {
+          npheap_lock(npheap_dev,temp4->offset);
+          npheap_delete(npheap_dev,temp4->offset);
+          temp4->mapping = (void *)npheap_alloc(npheap_dev,temp4->offset,temp4->size);
+          temp4->size = npheap_getsize(npheap_dev,temp4->offset);
+          npheap_unlock(npheap_dev,temp4->offset);
+        }
+        map = temp4->mapping;
+        memset(map, 0, temp4->size);
+        memcpy(map, buf, temp4->size);
+        for_lock_commit->offset = temp4->offset;
+        for_lock_commit->size = 2;
+        ioctl(tnpheap_dev,TNPHEAP_IOCTL_COMMIT,for_lock_commit);
+        temp4=temp4->next;
+    }
+    for_lock_commit = 1;
+    ioctl(tnpheap_dev,TNPHEAP_IOCTL_COMMIT,for_lock_commit);
     return 0;
 }
-
