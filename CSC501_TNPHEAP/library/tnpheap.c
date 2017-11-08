@@ -50,18 +50,17 @@ void *tnpheap_alloc(int npheap_dev, int tnpheap_dev, __u64 offset, __u64 size)
     {
         if (offset == temp->offset)
 	{
-            ver = tnpheap_get_version(npheap_dev,tnpheap_dev,offset);
             printf("Object %lld already there & Current version of the object is %lld\n\n",offset,ver);
+            ver = tnpheap_get_version(npheap_dev,tnpheap_dev,offset);
 	    return temp->buffer;
 	}
-
-	else
+	else 
 	{
-	    temp=temp->next;
+	temp=temp->next;
 	}
     }
 
-    printf("Object NOT there, Adding...........\n");
+    printf("Object %ld NOT there, Adding...........\n",offset);
     struct my_tnpheap *temp2 = start;
     struct my_tnpheap *new_node = (struct my_tnpheap*)malloc(sizeof(struct my_tnpheap));
     new_node->mapping = (void *)npheap_alloc(npheap_dev,offset,size);
@@ -73,14 +72,15 @@ void *tnpheap_alloc(int npheap_dev, int tnpheap_dev, __u64 offset, __u64 size)
 
     if(temp2==NULL)
     {
-        printf("first object!!!!!\n");
+        printf("first object: %ld!!!!!\n",offset);
 	start = new_node;
     }
+    
     else
     {
         while(temp2->next!=NULL)
         {
-            printf("Appending to list\n");
+            printf("Appending to list offset %d\n",offset);
 	    temp2=temp2->next;
         }
 
