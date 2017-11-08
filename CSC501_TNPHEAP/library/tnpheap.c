@@ -24,6 +24,7 @@ struct my_tnpheap
 
 struct tnpheap_cmd cmd;
 struct my_tnpheap *start = NULL;
+struct my_tnpheap *new_node = (struct my_tnpheap*)malloc(sizeof(struct my_tnpheap));
 
 __u64 tnpheap_get_version(int npheap_dev, int tnpheap_dev, __u64 offset)
 {
@@ -31,7 +32,7 @@ __u64 tnpheap_get_version(int npheap_dev, int tnpheap_dev, __u64 offset)
     struct tnpheap_cmd vercmd;
     vercmd.offset = offset;
     ver = ioctl(tnpheap_dev,TNPHEAP_IOCTL_GET_VERSION,&vercmd);
-    return var;
+    return ver;
 }
 
 
@@ -64,7 +65,6 @@ void *tnpheap_alloc(int npheap_dev, int tnpheap_dev, __u64 offset, __u64 size)
     printf("Object NOT there, Adding...........\n");
     struct my_tnpheap *temp2 = start;
 
-    struct my_tnpheap *new_node = (struct my_tnpheap*)malloc(sizeof(struct my_tnpheap));
     new_node->mapping = (void *)npheap_alloc(npheap_dev,offset,size);
     new_node->buffer = (void *)malloc(size);
     new_node->version = tnpheap_get_version(npheap_dev,tnpheap_dev,offset);
@@ -110,16 +110,13 @@ int tnpheap_commit(int npheap_dev, int tnpheap_dev)
     struct my_tnpheap *temp3 = start;
 
     //Check version
-    while(temp2!=NULL)
+    while(temp3!=NULL)
     {
-      if(temp2->version != tnpheap_get_version(npheap_dev,tnpheap_dev,offset)
+      if(temp3->version != tnpheap_get_version(npheap_dev,tnpheap_dev,temp3->offset))
       {
         return 1;
       }
-      else
-      {
-        temp2=temp2->next;
-      }
+        temp3=temp3->next;
     }
 
     // Now we are confirmed that version matches for all objects
