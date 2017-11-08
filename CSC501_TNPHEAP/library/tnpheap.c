@@ -106,8 +106,10 @@ int tnpheap_commit(int npheap_dev, int tnpheap_dev)
     struct tnpheap_cmd *for_lock_commit;
     for_lock_commit->size = 0;  // 0 for lock
     ioctl(tnpheap_dev,TNPHEAP_IOCTL_COMMIT,for_lock_commit);
-
+    printf("Obtained lock\n");
     struct my_tnpheap *temp3 = start;
+
+    //Check version
     while(temp2!=NULL)
     {
       if(temp2->version != tnpheap_get_version(npheap_dev,tnpheap_dev,offset)
@@ -121,7 +123,9 @@ int tnpheap_commit(int npheap_dev, int tnpheap_dev)
     }
 
     // Now we are confirmed that version matches for all objects
+    printf("Versions for all objects are matches, now we commit\n");
     struct my_tnpheap *temp4 = start;
+
     while(temp4!=NULL)
     {
         buf = temp4->buffer;
@@ -133,9 +137,11 @@ int tnpheap_commit(int npheap_dev, int tnpheap_dev)
           temp4->size = npheap_getsize(npheap_dev,temp4->offset);
           npheap_unlock(npheap_dev,temp4->offset);
         }
+        printf("Size has matched\n");
         map = temp4->mapping;
         memset(map, 0, temp4->size);
         memcpy(map, buf, temp4->size);
+        free(buf);
         for_lock_commit->offset = temp4->offset;
         for_lock_commit->size = 2;
         ioctl(tnpheap_dev,TNPHEAP_IOCTL_COMMIT,for_lock_commit);
@@ -143,5 +149,6 @@ int tnpheap_commit(int npheap_dev, int tnpheap_dev)
     }
     for_lock_commit = 1;
     ioctl(tnpheap_dev,TNPHEAP_IOCTL_COMMIT,for_lock_commit);
+    free(new_node);
     return 0;
 }
