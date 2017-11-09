@@ -159,7 +159,6 @@ __u64 tnpheap_commit(struct tnpheap_cmd __user *user_cmd)
     else if(cmd.size == 2)
     {
       struct ver_off *my_temp = head;
-      printk("incrementing version for offset %d \n",cmd.offset);
       while (my_temp!=NULL)
       {
           if(my_temp->offset == cmd.offset)

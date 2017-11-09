@@ -18,6 +18,6 @@ sudo chmod 777 /dev/tnpheap
 cat *.log > trace
 sort -n -k 3 trace > sorted_trace
 ./benchmark/validate 2 8192 < sorted_trace
-rm -f *.log
-sudo rmmod tnpheap
-sudo rmmod npheap
+#rm -f *.log
+#sudo rmmod tnpheap
+#sudo rmmod npheap

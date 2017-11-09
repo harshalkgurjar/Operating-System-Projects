@@ -162,7 +162,7 @@ int tnpheap_commit(int npheap_dev, int tnpheap_dev)
         map = temp4->mapping;
         memset(map, 0, temp4->size);
         memcpy(map, buf, temp4->size);
-        //free(buf);
+        free(buf);
         for_lock_commit->offset = temp4->offset;
         for_lock_commit->size = 2;
         ioctl(tnpheap_dev,TNPHEAP_IOCTL_COMMIT,for_lock_commit);
