@@ -47,7 +47,9 @@ void *tnpheap_alloc(int npheap_dev, int tnpheap_dev, __u64 offset, __u64 size)
     __u64 ver;
     struct my_tnpheap *temp = start;
     while(temp!=NULL)
-    {
+    
+{
+	printf("searching for offset: current : %d \n",temp->offset);
         if (offset == temp->offset)
 	{
             printf("Object %lld already there & Current version of the object is %lld\n\n",offset,ver);
@@ -74,6 +76,7 @@ void *tnpheap_alloc(int npheap_dev, int tnpheap_dev, __u64 offset, __u64 size)
     {
         printf("first object: %ld!!!!!\n",offset);
 	start = new_node;
+	temp2 = start;
     }
     
     else
@@ -86,6 +89,8 @@ void *tnpheap_alloc(int npheap_dev, int tnpheap_dev, __u64 offset, __u64 size)
 
         temp2->next = new_node;
     }
+
+    printf("returning buffer\n",offset);
     return new_node->buffer;
 }
 
@@ -100,16 +105,38 @@ int tnpheap_commit(int npheap_dev, int tnpheap_dev)
     // If NO : return 1
     // IF YES : copy from buffer space to kernel space and return 0
     // While copying , make sure that is atomic
+  /*      __u64 version;
+    __u64 offset;
+    __u64 size;
+    void *data;
+  */
+    fprintf(stderr,"trying for lock 1\n");
+    fprintf(stderr,"trying for lock 1.2\n");
+    struct tnpheap_cmd*  for_lock_commit=     (struct tnpheap_cmd*) malloc(sizeof(struct tnpheap_cmd));
+   
+    fprintf(stderr,"trying for lock 1.3\n");
+    for_lock_commit->size = 0;  // 0 for lock
+    for_lock_commit->version = 0;
+    for_lock_commit->offset = 0;
+    for_lock_commit->data = NULL;
+    
+    fprintf(stderr,"trying for lock 2\n");
+    ioctl(tnpheap_dev,TNPHEAP_IOCTL_COMMIT,for_lock_commit);
+    
+    struct my_tnpheap *temp3 = start;
+    //npheap_lock(npheap_dev,0);
+    //Check version
+    
     char *buf;
     char *map;
-    struct tnpheap_cmd *for_lock_commit;
-    for_lock_commit->size = 0;  // 0 for lock
-    ioctl(tnpheap_dev,TNPHEAP_IOCTL_COMMIT,for_lock_commit);
-    printf("Obtained lock\n");
-    struct my_tnpheap *temp3 = start;
+    fprintf(stderr,"trying for lock 3\n");
 
-    //Check version
-    while(temp3!=NULL)
+    for_lock_commit->size = 1;
+    fprintf(stderr,"trying for unlock\n");
+    ioctl(tnpheap_dev,TNPHEAP_IOCTL_COMMIT,for_lock_commit);
+    return 0;
+    /* 
+ while(temp3!=NULL)
     {
       if(temp3->version != tnpheap_get_version(npheap_dev,tnpheap_dev,temp3->offset))
       {
@@ -125,16 +152,17 @@ int tnpheap_commit(int npheap_dev, int tnpheap_dev)
     while(temp4!=NULL)
     {
         buf = temp4->buffer;
-        while(temp4->size != npheap_getsize(npheap_dev,temp4->offset))
+      *while(temp4->size != npheap_getsize(npheap_dev,temp4->offset))
         {
-          npheap_lock(npheap_dev,temp4->offset);
+          //npheap_lock(npheap_dev,temp4->offset);
           npheap_delete(npheap_dev,temp4->offset);
           temp4->mapping = (void *)npheap_alloc(npheap_dev,temp4->offset,temp4->size);
           temp4->size = npheap_getsize(npheap_dev,temp4->offset);
           npheap_unlock(npheap_dev,temp4->offset);
         }
-        printf("Size has matched\n");
-        map = temp4->mapping;
+        //printf("Size has matched\n");*/
+
+    /*    map = temp4->mapping;
         memset(map, 0, temp4->size);
         memcpy(map, buf, temp4->size);
         free(buf);
@@ -142,9 +170,8 @@ int tnpheap_commit(int npheap_dev, int tnpheap_dev)
         for_lock_commit->size = 2;
         ioctl(tnpheap_dev,TNPHEAP_IOCTL_COMMIT,for_lock_commit);
         temp4=temp4->next;
-    }
-    for_lock_commit = 1;
-    ioctl(tnpheap_dev,TNPHEAP_IOCTL_COMMIT,for_lock_commit);
-    //free(new_node);
-    return 0;
+    }*/
+    //free(new_node);*/
+    
+//return 0;
 }

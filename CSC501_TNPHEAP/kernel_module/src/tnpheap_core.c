@@ -44,6 +44,7 @@
 #include <linux/mutex.h>
 #include <linux/time.h>
 
+    DEFINE_MUTEX(my_mutex);
 struct miscdevice tnpheap_dev;
 
 struct ver_off
@@ -99,7 +100,8 @@ __u64 tnpheap_get_version(struct tnpheap_cmd __user *user_cmd)
       // First object
       if(traverse2==NULL)
       {
-        traverse2 = new_node;
+         head = new_node;
+	traverse2=head;
       }
 
       else
@@ -108,8 +110,7 @@ __u64 tnpheap_get_version(struct tnpheap_cmd __user *user_cmd)
         {
           traverse2=traverse2->next;
         }
-      traverse2 = traverse2->next;
-      traverse2 = new_node;
+      traverse2->next=new_node;
        }
 
       printk("Object %ld : version %ld\n",cmd.offset,traverse2->version);
@@ -134,8 +135,7 @@ __u64 tnpheap_commit(struct tnpheap_cmd __user *user_cmd)
 {
     struct tnpheap_cmd cmd;
     __u64 ret=0;
-    DEFINE_MUTEX(my_mutex);
-
+    printk("inside kernel\n");	
     if (copy_from_user(&cmd, user_cmd, sizeof(cmd)))
     {
         printk("Copy failed in tnpheap_commit\n");
@@ -144,27 +144,31 @@ __u64 tnpheap_commit(struct tnpheap_cmd __user *user_cmd)
     // If size = 0, then perform lock
     // If size = 1, then perform unlocked
     // If size = 2, increment version number for that object
-    if(user_cmd->size == 0)
+    else if(cmd.size == 0)
     {
-      mutex_lock(&my_mutex);
+	printk("locking \n");
+	mutex_lock(&my_mutex);
     }
 
-    if(user_cmd->size == 1)
+    else if(cmd.size == 1)
     {
-      mutex_unlock(&my_mutex);
+	printk("unlocking \n");
+	mutex_unlock(&my_mutex);
     }
 
-    if(user_cmd->size == 2)
+    else if(cmd.size == 2)
     {
       struct ver_off *my_temp = head;
       while (my_temp!=NULL)
       {
-          if(my_temp->offset == user_cmd->offset)
+          if(my_temp->offset == cmd.offset)
           {
             printk("Incremnting version for %ld\n",my_temp->offset);
             my_temp->version += 1;
-          }
-          my_temp = my_temp->next;
+            break;
+	  }
+	else
+           my_temp = my_temp->next;
       }
     }
     return ret;

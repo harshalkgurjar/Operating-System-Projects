@@ -46,11 +46,16 @@ int main(int argc, char *argv[])
     tnpheap_init();
     npheap_dev = open("/dev/npheap",O_RDWR);
     tnpheap_dev = open("/dev/tnpheap",O_RDWR);
-    if(tnpheap_dev < 0 || npheap_dev < 0)
+    if(tnpheap_dev < 0 )
+
     {
-        fprintf(stderr, "Device open failed");
+        fprintf(stderr, "Device open failed  npheap");
         exit(1);
     }
+	else if(npheap_dev < 0)
+        {fprintf(stderr, "Device open failed  tnpheap");
+        exit(1);
+}
     // Writing to objects
     i=0;
     do{
@@ -84,6 +89,7 @@ int main(int argc, char *argv[])
     {
         if(data_array[i].size)
         {
+	    fprintf(stderr,"trying object : %d for pid : %d \n",i,getpid());
             size = data_array[i].size;
             mapped_data = (char *)tnpheap_alloc(npheap_dev,tnpheap_dev,i,size);
             if(!mapped_data)
@@ -94,6 +100,7 @@ int main(int argc, char *argv[])
             memset(mapped_data, 0, data_array[i].size);
             memcpy(mapped_data, data_array[i].data, data_array[i].size);
         }
+	
     }
     COMMIT(npheap_dev, tnpheap_dev);
     gettimeofday(&current_time,NULL);
