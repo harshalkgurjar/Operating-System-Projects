@@ -1,2 +1,2 @@
-# OS_Projects
-Personal implementation of each OS projects
+# Operating-System-Projects
+Operating System Projects
